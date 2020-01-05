@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Default {@link RulesEngine} implementation.
@@ -74,7 +75,7 @@ public final class DefaultRulesEngine extends AbstractRulesEngine {
         logEngineParameters();
         log(rules);
         log(facts);
-        LOGGER.debug("Rules evaluation started");
+        LOGGER.debug("Rules evaluation started -----------");
         for (Rule rule : rules) {
             final String name = rule.getName();
             final int priority = rule.getPriority();
@@ -89,12 +90,12 @@ public final class DefaultRulesEngine extends AbstractRulesEngine {
                 continue;
             }
             if (rule.evaluate(facts)) {
-                LOGGER.debug("Rule '{}' triggered", name);
+                LOGGER.debug("Rule '{}'  TRIGGERED", name);
                 triggerListenersAfterEvaluate(rule, facts, true);
                 try {
                     triggerListenersBeforeExecute(rule, facts);
                     rule.execute(facts);
-                    LOGGER.debug("Rule '{}' performed successfully", name);
+//                    LOGGER.debug("Rule '{}' performed successfully", name);
                     triggerListenersOnSuccess(rule, facts);
                     if (parameters.isSkipOnFirstAppliedRule()) {
                         LOGGER.debug("Next rules will be skipped since parameter skipOnFirstAppliedRule is set");
@@ -109,7 +110,7 @@ public final class DefaultRulesEngine extends AbstractRulesEngine {
                     }
                 }
             } else {
-                LOGGER.debug("Rule '{}' has been evaluated to false, it has not been executed", name);
+                LOGGER.debug("Rule '{}'", name);
                 triggerListenersAfterEvaluate(rule, facts, false);
                 if (parameters.isSkipOnFirstNonTriggeredRule()) {
                     LOGGER.debug("Next rules will be skipped since parameter skipOnFirstNonTriggeredRule is set");
@@ -124,16 +125,17 @@ public final class DefaultRulesEngine extends AbstractRulesEngine {
     }
 
     private void log(Rules rules) {
-        LOGGER.debug("Registered rules:");
-        for (Rule rule : rules) {
-            LOGGER.debug("Rule { name = '{}', description = '{}', priority = '{}'}",
-                    rule.getName(), rule.getDescription(), rule.getPriority());
-        }
+//        LOGGER.debug("Registered rules:");
+//        for (Rule rule : rules) {
+//            LOGGER.debug("Rule { name = '{}', description = '{}', priority = '{}'}",
+//                    rule.getName(), rule.getDescription(), rule.getPriority());
+//        }
     }
 
     private void log(Facts facts) {
-        LOGGER.debug("Known facts:");
-        for (Map.Entry<String, Object> fact : facts) {
+        LOGGER.debug("Known facts: -----------------------");
+        Map<String, Object> sorted = new TreeMap<>(facts.asMap());
+        for (Map.Entry<String, Object> fact : sorted.entrySet()) {
             LOGGER.debug("Fact { {} : {} }",
                     fact.getKey(), fact.getValue());
         }
