@@ -23,8 +23,19 @@
  */
 package org.jeasy.rules.support;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+import org.json.JSONObject;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,28 +53,50 @@ import java.util.Map;
  * @author Mahmoud Ben Hassine (mahmoud.benhassine@icloud.com)
  */
 @SuppressWarnings("unchecked")
-public class JsonRuleDefinitionReader extends AbstractRuleDefinitionReader {
+public class MongoRuleDefinitionReader extends AbstractRuleDefinitionReader {
 
     private ObjectMapper objectMapper;
 
     /**
-     * Create a new {@link JsonRuleDefinitionReader}.
+     * Create a new {@link MongoRuleDefinitionReader}.
      */
-    public JsonRuleDefinitionReader() {
+    public MongoRuleDefinitionReader() {
         this(new ObjectMapper());
     }
 
     /**
-     * Create a new {@link JsonRuleDefinitionReader}.
+     * Create a new {@link MongoRuleDefinitionReader}.
      *
      * @param objectMapper to use to read rule definitions
      */
-    public JsonRuleDefinitionReader(ObjectMapper objectMapper) {
+    public MongoRuleDefinitionReader(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
     @Override
     protected Iterable<Map<String, Object>> loadRules(Reader reader) throws Exception {
+        MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
+        MongoDatabase database = mongoClient.getDatabase("testing");
+        MongoCollection<Document> collection = database.getCollection("rules");
+        MongoCursor<Document> cursor = collection.find().iterator();
+        try {
+            String databases = "";
+            while (cursor.hasNext()) {
+                databases += cursor.next().toJson();
+            }
+            JSONObject jsonObject = new JSONObject(databases);
+            FileWriter file = new FileWriter("test.json");
+            file.write(jsonObject.toString());
+            file.close();
+        } catch (JsonGenerationException e) {
+            e.printStackTrace();
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            cursor.close();
+        }
         List<Map<String, Object>> rulesList = new ArrayList<>();
         Object[] rules = objectMapper.readValue(reader, Object[].class);
         for (Object rule : rules) {
